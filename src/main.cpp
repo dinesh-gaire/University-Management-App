@@ -10,7 +10,27 @@
 #include <fstream>
 #include <map>
 
-enum Screen { LOGIN, MENU, ADD_STUDENT, ADD_COURSE, ADD_FACULTY, DISPLAY_STUDENTS, DISPLAY_COURSES, DISPLAY_FACULTY, ATTENDANCE, DISPLAY_ATTENDANCE };
+enum Screen {
+    LOGIN,
+    MENU,
+    STUDENT_MENU,
+    COURSE_MENU,
+    FACULTY_MENU,
+    ADD_STUDENT,
+    DISPLAY_STUDENTS,
+    UPDATE_STUDENT,
+    DELETE_STUDENT,
+    ADD_COURSE,
+    DISPLAY_COURSES,
+    UPDATE_COURSE,
+    DELETE_COURSE,
+    ADD_FACULTY,
+    DISPLAY_FACULTY,
+    UPDATE_FACULTY,
+    DELETE_FACULTY,
+    TAKE_ATTENDANCE,
+    DISPLAY_ATTENDANCE
+};
 
 bool Button(Rectangle rect, const char* text) {
     bool clicked = false;
@@ -203,19 +223,69 @@ int main() {
                 break;
 
             case MENU:
-                DrawText("University Management System", 190, 50, 20, DARKGRAY);
                 if (isAdmin) {
-                    if (Button({340, 150, 200, 40}, "Add Student")) currentScreen = ADD_STUDENT;
-                    if (Button({340, 200, 200, 40}, "Add Course")) currentScreen = ADD_COURSE;
-                    if (Button({340, 250, 200, 40}, "Add Faculty")) currentScreen = ADD_FACULTY;
-                    if (Button({340, 300, 200, 40}, "Take Attendance")) currentScreen = ATTENDANCE;
-                    if (Button({340, 350, 200, 40}, "Display Attendance")) currentScreen = DISPLAY_ATTENDANCE;
+                    DrawText("Admin Menu", 350, 50, 20, DARKGRAY);
+                    if (Button({300, 100, 200, 40}, "Students"))
+                        currentScreen = STUDENT_MENU;
+                    if (Button({300, 150, 200, 40}, "Courses"))
+                        currentScreen = COURSE_MENU;
+                    if (Button({300, 200, 200, 40}, "Faculty"))
+                        currentScreen = FACULTY_MENU;
+                    if (Button({300, 300, 200, 40}, "Logout"))
+                        currentScreen = LOGIN;
                 } else {
+                    DrawText("Student Menu", 350, 50, 20, DARKGRAY);
                     if (Button({340, 150, 200, 40}, "Display Students")) currentScreen = DISPLAY_STUDENTS;
                     if (Button({340, 200, 200, 40}, "Display Courses")) currentScreen = DISPLAY_COURSES;
                     if (Button({340, 250, 200, 40}, "Display Faculty")) currentScreen = DISPLAY_FACULTY;
                     if (Button({340, 300, 200, 40}, "Display Attendance")) currentScreen = DISPLAY_ATTENDANCE;
                 }
+                break;
+
+            case STUDENT_MENU:
+                DrawText("Student Menu", 350, 50, 20, DARKGRAY);
+                if (Button({300, 100, 200, 40}, "Add Student"))
+                    currentScreen = ADD_STUDENT;
+                if (Button({300, 150, 200, 40}, "Display Students"))
+                    currentScreen = DISPLAY_STUDENTS;
+                if (Button({300, 200, 200, 40}, "Update Student"))
+                    currentScreen = UPDATE_STUDENT;
+                if (Button({300, 250, 200, 40}, "Delete Student"))
+                    currentScreen = DELETE_STUDENT;
+                if (Button({300, 300, 200, 40}, "Take Attendance"))
+                    currentScreen = TAKE_ATTENDANCE;
+                if (Button({300, 350, 200, 40}, "Display Attendance"))
+                    currentScreen = DISPLAY_ATTENDANCE;
+                if (Button({300, 400, 200, 40}, "Back"))
+                    currentScreen = MENU;
+                break;
+
+            case COURSE_MENU:
+                DrawText("Course Menu", 350, 50, 20, DARKGRAY);
+                if (Button({300, 100, 200, 40}, "Add Course"))
+                    currentScreen = ADD_COURSE;
+                if (Button({300, 150, 200, 40}, "Display Courses"))
+                    currentScreen = DISPLAY_COURSES;
+                if (Button({300, 200, 200, 40}, "Update Course"))
+                    currentScreen = UPDATE_COURSE;
+                if (Button({300, 250, 200, 40}, "Delete Course"))
+                    currentScreen = DELETE_COURSE;
+                if (Button({300, 300, 200, 40}, "Back"))
+                    currentScreen = MENU;
+                break;
+
+            case FACULTY_MENU:
+                DrawText("Faculty Menu", 350, 50, 20, DARKGRAY);
+                if (Button({300, 100, 200, 40}, "Add Faculty"))
+                    currentScreen = ADD_FACULTY;
+                if (Button({300, 150, 200, 40}, "Display Faculty"))
+                    currentScreen = DISPLAY_FACULTY;
+                if (Button({300, 200, 200, 40}, "Update Faculty"))
+                    currentScreen = UPDATE_FACULTY;
+                if (Button({300, 250, 200, 40}, "Delete Faculty"))
+                    currentScreen = DELETE_FACULTY;
+                if (Button({300, 300, 200, 40}, "Back"))
+                    currentScreen = MENU;
                 break;
 
             case ADD_STUDENT:
@@ -349,7 +419,7 @@ int main() {
                 if (Button({300, 500, 200, 40}, "Back")) currentScreen = MENU;
                 break;
 
-            case ATTENDANCE:
+            case TAKE_ATTENDANCE:
                 DrawText("Take Attendance", 350, 50, 20, DARKGRAY);
                 DrawText("Date (YYYY-MM-DD):", 200, 100, 20, DARKGRAY);
                 DateInput(attendanceDate, sizeof(attendanceDate), {400, 100, 200, 40}, dateActive);
