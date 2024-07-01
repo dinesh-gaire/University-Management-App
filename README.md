@@ -17,7 +17,9 @@ This project is a simplified University Management System developed using C++ wi
 2. Navigate to the project directory.
 3. Navigate to the build directory: `cd build`
 4. Build the project: `mingw32-make`
+Note: You must have MinGW-w64 installed on your device.
 
 ## Running the Project
 1. Navigate to the build directory.
 2. Run the executable: `./ums`
+OR, Open the ums.exe file inside the build folder.
