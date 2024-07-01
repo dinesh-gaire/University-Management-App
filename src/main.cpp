@@ -329,6 +329,92 @@ int main() {
                 }
                 break;
 
+            case UPDATE_STUDENT:
+                DrawText("Update Student", 350, 50, 20, DARKGRAY);
+                DrawText("Enter Student ID:", 200, 150, 20, DARKGRAY);
+                TextInput(inputId, sizeof(inputId), {400, 150, 200, 40}, idActive);
+                DrawText("Enter Updated Name:", 200, 200, 20, DARKGRAY);
+                TextInput(inputName, sizeof(inputName), {400, 200, 200, 40}, !idActive);
+
+                if (Button({300, 300, 200, 40}, "Update"))
+                {
+                    if (strlen(inputId) > 0 && strlen(inputName) > 0)
+                    {
+                        for (auto &student : students)
+                        {
+                            if (student.getId() == inputId)
+                            {
+                                student.setName(inputName);
+                                FileHandler::saveStudents("students.txt", students);
+                                memset(inputId, 0, sizeof(inputId));
+                                memset(inputName, 0, sizeof(inputName));
+                                currentScreen = MENU;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (Button({300, 350, 200, 40}, "Back"))
+                {
+                    memset(inputId, 0, sizeof(inputId));
+                    memset(inputName, 0, sizeof(inputName));
+                    currentScreen = MENU;
+                }
+
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                {
+                    Vector2 mousePoint = GetMousePosition();
+                    if (CheckCollisionPointRec(mousePoint, {400, 150, 200, 40}))
+                    {
+                        idActive = true;
+                    }
+                    else if (CheckCollisionPointRec(mousePoint, {400, 200, 200, 40}))
+                    {
+                        idActive = false;
+                    }
+                }
+                break;
+
+            case DELETE_STUDENT:
+                DrawText("Delete Student", 350, 50, 20, DARKGRAY);
+                DrawText("Enter Student ID:", 200, 150, 20, DARKGRAY);
+                TextInput(inputId, sizeof(inputId), {400, 150, 200, 40}, idActive);
+
+                if (Button({300, 250, 200, 40}, "Delete"))
+                {
+                    if (strlen(inputId) > 0)
+                    {
+                        for (auto it = students.begin(); it != students.end(); ++it)
+                        {
+                            if (it->getId() == inputId)
+                            {
+                                students.erase(it);
+                                FileHandler::saveStudents("students.txt", students);
+                                memset(inputId, 0, sizeof(inputId));
+                                currentScreen = MENU;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (Button({300, 300, 200, 40}, "Back"))
+                {
+                    memset(inputId, 0, sizeof(inputId));
+                    currentScreen = MENU;
+                }
+
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                {
+                    Vector2 mousePoint = GetMousePosition();
+                    if (CheckCollisionPointRec(mousePoint, {400, 150, 200, 40}))
+                    {
+                        idActive = true;
+                    }
+                }
+                break;
+
             case ADD_COURSE:
                 DrawText("Add Course", 350, 50, 20, DARKGRAY);
                 DrawText("Course ID:", 200, 150, 20, DARKGRAY);
@@ -361,6 +447,8 @@ int main() {
                     }
                 }
                 break;
+
+            
 
             case ADD_FACULTY:
                 DrawText("Add Faculty", 350, 50, 20, DARKGRAY);
