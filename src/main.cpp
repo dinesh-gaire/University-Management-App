@@ -7,44 +7,97 @@
 #include "Faculty.h"
 #include "FileHandler.h"
 
-enum Screen { MENU, ADD_STUDENT, ADD_COURSE, ADD_FACULTY, DISPLAY_STUDENTS, DISPLAY_COURSES, DISPLAY_FACULTY };
+enum Screen
+{
+    LOGIN,
+    MENU,
+    ADD_STUDENT,
+    ADD_COURSE,
+    ADD_FACULTY,
+    DISPLAY_STUDENTS,
+    DISPLAY_COURSES,
+    DISPLAY_FACULTY
+};
 
-bool Button(Rectangle rect, const char* text) {
+bool Button(Rectangle rect, const char *text)
+{
     bool clicked = false;
     Vector2 mousePoint = GetMousePosition();
-    if (CheckCollisionPointRec(mousePoint, rect)) {
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) clicked = true;
+    if (CheckCollisionPointRec(mousePoint, rect))
+    {
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+            clicked = true;
         DrawRectangleRec(rect, LIGHTGRAY);
-    } else {
+    }
+    else
+    {
         DrawRectangleRec(rect, GRAY);
     }
     DrawText(text, rect.x + 10, rect.y + 10, 20, BLACK);
     return clicked;
 }
 
-void TextInput(char* buffer, int bufferSize, Rectangle rect, bool active) {
+void TextInput(char *buffer, int bufferSize, Rectangle rect, bool active)
+{
     DrawRectangleRec(rect, active ? LIGHTGRAY : DARKGRAY);
     DrawText(buffer, rect.x + 5, rect.y + 5, 20, BLACK);
 
-    if (active) {
+    if (active)
+    {
         int key = GetCharPressed();
-        while (key > 0) {
+        while (key > 0)
+        {
             int length = strlen(buffer);
-            if (length < bufferSize - 1) {
+            if (length < bufferSize - 1)
+            {
                 buffer[length] = (char)key;
                 buffer[length + 1] = '\0';
             }
             key = GetCharPressed();
         }
 
-        if (IsKeyPressed(KEY_BACKSPACE)) {
+        if (IsKeyPressed(KEY_BACKSPACE))
+        {
             int length = strlen(buffer);
-            if (length > 0) buffer[length - 1] = '\0';
+            if (length > 0)
+                buffer[length - 1] = '\0';
         }
     }
 }
 
-int main() {
+bool PasswordInput(char *buffer, int bufferSize, Rectangle rect, bool active)
+{
+    DrawRectangleRec(rect, active ? LIGHTGRAY : DARKGRAY);
+    std::string masked(buffer, strlen(buffer));
+    std::fill(masked.begin(), masked.end(), '*');
+    DrawText(masked.c_str(), rect.x + 5, rect.y + 5, 20, BLACK);
+
+    if (active)
+    {
+        int key = GetCharPressed();
+        while (key > 0)
+        {
+            int length = strlen(buffer);
+            if (length < bufferSize - 1)
+            {
+                buffer[length] = (char)key;
+                buffer[length + 1] = '\0';
+            }
+            key = GetCharPressed();
+        }
+
+        if (IsKeyPressed(KEY_BACKSPACE))
+        {
+            int length = strlen(buffer);
+            if (length > 0)
+                buffer[length - 1] = '\0';
+        }
+    }
+    return true;
+}
+
+int main()
+{
     std::vector<Student> students = FileHandler::loadStudents("students.txt");
     std::vector<Course> courses = FileHandler::loadCourses("courses.txt");
     std::vector<Faculty> faculty = FileHandler::loadFaculty("faculty.txt");
@@ -54,162 +107,244 @@ int main() {
 
     InitWindow(screenWidth, screenHeight, "University Management System");
 
-    Screen currentScreen = MENU;
+    Screen currentScreen = LOGIN;
     char inputId[10] = {0};
     char inputName[50] = {0};
+    char username[20] = {0};
+    char password[20] = {0};
     bool idActive = true;
+    bool usernameActive = true;
+    bool isAdmin = false;
 
     SetTargetFPS(60);
 
-    while (!WindowShouldClose()) {
+    while (!WindowShouldClose())
+    {
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        switch (currentScreen) {
-            case MENU:
-                DrawText("University Management System", 190, 50, 20, DARKGRAY);
-                if (Button({340, 150, 200, 40}, "Add Student")) currentScreen = ADD_STUDENT;
-                if (Button({340, 200, 200, 40}, "Add Course")) currentScreen = ADD_COURSE;
-                if (Button({340, 250, 200, 40}, "Add Faculty")) currentScreen = ADD_FACULTY;
-                if (Button({340, 300, 200, 40}, "Display Students")) currentScreen = DISPLAY_STUDENTS;
-                if (Button({340, 350, 200, 40}, "Display Courses")) currentScreen = DISPLAY_COURSES;
-                if (Button({340, 400, 200, 40}, "Display Faculty")) currentScreen = DISPLAY_FACULTY;
-                break;
+        switch (currentScreen)
+        {
+        case LOGIN:
+            DrawText("Login", 370, 50, 20, DARKGRAY);
+            DrawText("Username:", 200, 150, 20, DARKGRAY);
+            TextInput(username, sizeof(username), {400, 150, 200, 40}, usernameActive);
+            DrawText("Password:", 200, 200, 20, DARKGRAY);
+            PasswordInput(password, sizeof(password), {400, 200, 200, 40}, !usernameActive);
 
-            case ADD_STUDENT:
-                DrawText("Add Student", 350, 50, 20, DARKGRAY);
-                DrawText("Student ID:", 200, 150, 20, DARKGRAY);
-                TextInput(inputId, sizeof(inputId), {400, 150, 200, 40}, idActive);
-                DrawText("Student Name:", 200, 200, 20, DARKGRAY);
-                TextInput(inputName, sizeof(inputName), {400, 200, 200, 40}, !idActive);
-
-                if (Button({300, 300, 200, 40}, "Save")) {
-                    if (strlen(inputId) > 0 && strlen(inputName) > 0) {
-                        students.emplace_back(inputId, inputName);
-                        FileHandler::saveStudents("students.txt", students);
-                        memset(inputId, 0, sizeof(inputId));
-                        memset(inputName, 0, sizeof(inputName));
-                        currentScreen = MENU;
-                    }
+            if (Button({300, 300, 200, 40}, "Login"))
+            {
+                if (strcmp(username, "admin") == 0 && strcmp(password, "admin") == 0)
+                {
+                    isAdmin = true;
+                    currentScreen = MENU;
                 }
+                else if (strcmp(username, "student") == 0 && strcmp(password, "student") == 0)
+                {
+                    isAdmin = false;
+                    currentScreen = MENU;
+                }
+                else
+                {
+                    DrawText("Invalid credentials", 300, 400, 20, RED);
+                }
+            }
 
-                if (Button({300, 350, 200, 40}, "Back")) {
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+            {
+                Vector2 mousePoint = GetMousePosition();
+                if (CheckCollisionPointRec(mousePoint, {400, 150, 200, 40}))
+                {
+                    usernameActive = true;
+                }
+                else if (CheckCollisionPointRec(mousePoint, {400, 200, 200, 40}))
+                {
+                    usernameActive = false;
+                }
+            }
+            break;
+
+        case MENU:
+            DrawText("University Management System", 190, 50, 20, DARKGRAY);
+            if (isAdmin)
+            {
+                if (Button({340, 150, 200, 40}, "Add Student"))
+                    currentScreen = ADD_STUDENT;
+                if (Button({340, 200, 200, 40}, "Add Course"))
+                    currentScreen = ADD_COURSE;
+                if (Button({340, 250, 200, 40}, "Add Faculty"))
+                    currentScreen = ADD_FACULTY;
+            }
+            if (Button({340, (float)(isAdmin ? 300 : 150), 200, 40}, "Display Students"))
+                currentScreen = DISPLAY_STUDENTS;
+            if (Button({340, (float)(isAdmin ? 350 : 200), 200, 40}, "Display Courses"))
+                currentScreen = DISPLAY_COURSES;
+            if (Button({340, (float)(isAdmin ? 400 : 250), 200, 40}, "Display Faculty"))
+                currentScreen = DISPLAY_FACULTY;
+
+            break;
+
+        case ADD_STUDENT:
+            DrawText("Add Student", 350, 50, 20, DARKGRAY);
+            DrawText("Student ID:", 200, 150, 20, DARKGRAY);
+            TextInput(inputId, sizeof(inputId), {400, 150, 200, 40}, idActive);
+            DrawText("Student Name:", 200, 200, 20, DARKGRAY);
+            TextInput(inputName, sizeof(inputName), {400, 200, 200, 40}, !idActive);
+
+            if (Button({300, 300, 200, 40}, "Save"))
+            {
+                if (strlen(inputId) > 0 && strlen(inputName) > 0)
+                {
+                    students.emplace_back(inputId, inputName);
+                    FileHandler::saveStudents("students.txt", students);
                     memset(inputId, 0, sizeof(inputId));
                     memset(inputName, 0, sizeof(inputName));
                     currentScreen = MENU;
                 }
+            }
 
-                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                    Vector2 mousePoint = GetMousePosition();
-                    if (CheckCollisionPointRec(mousePoint, {400, 150, 200, 40})) {
-                        idActive = true;
-                    } else if (CheckCollisionPointRec(mousePoint, {400, 200, 200, 40})) {
-                        idActive = false;
-                    }
+            if (Button({300, 350, 200, 40}, "Back"))
+            {
+                memset(inputId, 0, sizeof(inputId));
+                memset(inputName, 0, sizeof(inputName));
+                currentScreen = MENU;
+            }
+
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+            {
+                Vector2 mousePoint = GetMousePosition();
+                if (CheckCollisionPointRec(mousePoint, {400, 150, 200, 40}))
+                {
+                    idActive = true;
                 }
-
-                break;
-
-            case ADD_COURSE:
-                DrawText("Add Course", 350, 50, 20, DARKGRAY);
-                DrawText("Course ID:", 200, 150, 20, DARKGRAY);
-                TextInput(inputId, sizeof(inputId), {400, 150, 200, 40}, idActive);
-                DrawText("Course Name:", 200, 200, 20, DARKGRAY);
-                TextInput(inputName, sizeof(inputName), {400, 200, 200, 40}, !idActive);
-
-                if (Button({300, 300, 200, 40}, "Save")) {
-                    if (strlen(inputId) > 0 && strlen(inputName) > 0) {
-                        courses.emplace_back(inputId, inputName);
-                        FileHandler::saveCourses("courses.txt", courses);
-                        memset(inputId, 0, sizeof(inputId));
-                        memset(inputName, 0, sizeof(inputName));
-                        currentScreen = MENU;
-                    }
+                else if (CheckCollisionPointRec(mousePoint, {400, 200, 200, 40}))
+                {
+                    idActive = false;
                 }
+            }
 
-                if (Button({300, 350, 200, 40}, "Back")) {
+            break;
+
+        case ADD_COURSE:
+            DrawText("Add Course", 350, 50, 20, DARKGRAY);
+            DrawText("Course ID:", 200, 150, 20, DARKGRAY);
+            TextInput(inputId, sizeof(inputId), {400, 150, 200, 40}, idActive);
+            DrawText("Course Name:", 200, 200, 20, DARKGRAY);
+            TextInput(inputName, sizeof(inputName), {400, 200, 200, 40}, !idActive);
+
+            if (Button({300, 300, 200, 40}, "Save"))
+            {
+                if (strlen(inputId) > 0 && strlen(inputName) > 0)
+                {
+                    courses.emplace_back(inputId, inputName);
+                    FileHandler::saveCourses("courses.txt", courses);
                     memset(inputId, 0, sizeof(inputId));
                     memset(inputName, 0, sizeof(inputName));
                     currentScreen = MENU;
                 }
+            }
 
-                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                    Vector2 mousePoint = GetMousePosition();
-                    if (CheckCollisionPointRec(mousePoint, {400, 150, 200, 40})) {
-                        idActive = true;
-                    } else if (CheckCollisionPointRec(mousePoint, {400, 200, 200, 40})) {
-                        idActive = false;
-                    }
+            if (Button({300, 350, 200, 40}, "Back"))
+            {
+                memset(inputId, 0, sizeof(inputId));
+                memset(inputName, 0, sizeof(inputName));
+                currentScreen = MENU;
+            }
+
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+            {
+                Vector2 mousePoint = GetMousePosition();
+                if (CheckCollisionPointRec(mousePoint, {400, 150, 200, 40}))
+                {
+                    idActive = true;
                 }
-
-                break;
-
-            case ADD_FACULTY:
-                DrawText("Add Faculty", 350, 50, 20, DARKGRAY);
-                DrawText("Faculty ID:", 200, 150, 20, DARKGRAY);
-                TextInput(inputId, sizeof(inputId), {400, 150, 200, 40}, idActive);
-                DrawText("Faculty Name:", 200, 200, 20, DARKGRAY);
-                TextInput(inputName, sizeof(inputName), {400, 200, 200, 40}, !idActive);
-
-                if (Button({300, 300, 200, 40}, "Save")) {
-                    if (strlen(inputId) > 0 && strlen(inputName) > 0) {
-                        faculty.emplace_back(inputId, inputName);
-                        FileHandler::saveFaculty("faculty.txt", faculty);
-                        memset(inputId, 0, sizeof(inputId));
-                        memset(inputName, 0, sizeof(inputName));
-                        currentScreen = MENU;
-                    }
+                else if (CheckCollisionPointRec(mousePoint, {400, 200, 200, 40}))
+                {
+                    idActive = false;
                 }
+            }
 
-                if (Button({300, 350, 200, 40}, "Back")) {
+            break;
+
+        case ADD_FACULTY:
+            DrawText("Add Faculty", 350, 50, 20, DARKGRAY);
+            DrawText("Faculty ID:", 200, 150, 20, DARKGRAY);
+            TextInput(inputId, sizeof(inputId), {400, 150, 200, 40}, idActive);
+            DrawText("Faculty Name:", 200, 200, 20, DARKGRAY);
+            TextInput(inputName, sizeof(inputName), {400, 200, 200, 40}, !idActive);
+
+            if (Button({300, 300, 200, 40}, "Save"))
+            {
+                if (strlen(inputId) > 0 && strlen(inputName) > 0)
+                {
+                    faculty.emplace_back(inputId, inputName);
+                    FileHandler::saveFaculty("faculty.txt", faculty);
                     memset(inputId, 0, sizeof(inputId));
                     memset(inputName, 0, sizeof(inputName));
                     currentScreen = MENU;
                 }
+            }
 
-                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                    Vector2 mousePoint = GetMousePosition();
-                    if (CheckCollisionPointRec(mousePoint, {400, 150, 200, 40})) {
-                        idActive = true;
-                    } else if (CheckCollisionPointRec(mousePoint, {400, 200, 200, 40})) {
-                        idActive = false;
-                    }
-                }
+            if (Button({300, 350, 200, 40}, "Back"))
+            {
+                memset(inputId, 0, sizeof(inputId));
+                memset(inputName, 0, sizeof(inputName));
+                currentScreen = MENU;
+            }
 
-                break;
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+            {
+                Vector2 mousePoint = GetMousePosition();
+                if (CheckCollisionPointRec(mousePoint, {400, 150, 200, 40}))
+                {
+                    idActive = true;
+                }
+                else if (CheckCollisionPointRec(mousePoint, {400, 200, 200, 40}))
+                {
+                    idActive = false;
+                }
+            }
 
-            case DISPLAY_STUDENTS:
-                DrawText("Students", 350, 50, 20, DARKGRAY);
-                for (int i = 0; i < students.size(); i++) {
-                    std::string studentInfo = "ID: " + students[i].getId() + " Name: " + students[i].getName();
-                    DrawText(studentInfo.c_str(), 100, 100 + i * 30, 20, DARKGRAY);
-                }
-                if (Button({300, 500, 200, 40}, "Back")) {
-                    currentScreen = MENU;
-                }
-                break;
+            break;
 
-            case DISPLAY_COURSES:
-                DrawText("Courses", 350, 50, 20, DARKGRAY);
-                for (int i = 0; i < courses.size(); i++) {
-                    std::string courseInfo = "ID: " + courses[i].getId() + " Name: " + courses[i].getName();
-                    DrawText(courseInfo.c_str(), 100, 100 + i * 30, 20, DARKGRAY);
-                }
-                if (Button({300, 500, 200, 40}, "Back")) {
-                    currentScreen = MENU;
-                }
-                break;
+        case DISPLAY_STUDENTS:
+            DrawText("Students", 350, 50, 20, DARKGRAY);
+            for (int i = 0; i < students.size(); i++)
+            {
+                std::string studentInfo = "ID: " + students[i].getId() + " Name: " + students[i].getName();
+                DrawText(studentInfo.c_str(), 100, 100 + i * 30, 20, DARKGRAY);
+            }
+            if (Button({300, 500, 200, 40}, "Back"))
+            {
+                currentScreen = MENU;
+            }
+            break;
 
-            case DISPLAY_FACULTY:
-                DrawText("Faculty", 350, 50, 20, DARKGRAY);
-                for (int i = 0; i < faculty.size(); i++) {
-                    std::string facultyInfo = "ID: " + faculty[i].getId() + " Name: " + faculty[i].getName();
-                    DrawText(facultyInfo.c_str(), 100, 100 + i * 30, 20, DARKGRAY);
-                }
-                if (Button({300, 500, 200, 40}, "Back")) {
-                    currentScreen = MENU;
-                }
-                break;
+        case DISPLAY_COURSES:
+            DrawText("Courses", 350, 50, 20, DARKGRAY);
+            for (int i = 0; i < courses.size(); i++)
+            {
+                std::string courseInfo = "ID: " + courses[i].getId() + " Name: " + courses[i].getName();
+                DrawText(courseInfo.c_str(), 100, 100 + i * 30, 20, DARKGRAY);
+            }
+            if (Button({300, 500, 200, 40}, "Back"))
+            {
+                currentScreen = MENU;
+            }
+            break;
+
+        case DISPLAY_FACULTY:
+            DrawText("Faculty", 350, 50, 20, DARKGRAY);
+            for (int i = 0; i < faculty.size(); i++)
+            {
+                std::string facultyInfo = "ID: " + faculty[i].getId() + " Name: " + faculty[i].getName();
+                DrawText(facultyInfo.c_str(), 100, 100 + i * 30, 20, DARKGRAY);
+            }
+            if (Button({300, 500, 200, 40}, "Back"))
+            {
+                currentScreen = MENU;
+            }
+            break;
         }
 
         EndDrawing();
