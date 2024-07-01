@@ -8,6 +8,7 @@
 #include "Faculty.h"
 #include "FileHandler.h"
 #include <fstream>
+#include <map>
 
 enum Screen { LOGIN, MENU, ADD_STUDENT, ADD_COURSE, ADD_FACULTY, DISPLAY_STUDENTS, DISPLAY_COURSES, DISPLAY_FACULTY, ATTENDANCE, DISPLAY_ATTENDANCE };
 
@@ -71,15 +72,43 @@ bool PasswordInput(char* buffer, int bufferSize, Rectangle rect, bool active) {
     return true;
 }
 
-std::unordered_map<std::string, bool> attendance;
+// Use nested maps to track attendance by date and student ID
+std::map<std::string, std::map<std::string, bool>> attendance; // date -> (student ID -> present)
+
+char attendanceDate[11] = {0}; // Format: YYYY-MM-DD
+bool dateActive = false;
+
+// Add a function to input dates
+void DateInput(char* buffer, int bufferSize, Rectangle rect, bool active) {
+    DrawRectangleRec(rect, active ? LIGHTGRAY : DARKGRAY);
+    DrawText(buffer, rect.x + 5, rect.y + 5, 20, BLACK);
+
+    if (active) {
+        int key = GetCharPressed();
+        while (key > 0) {
+            int length = strlen(buffer);
+            if (length < bufferSize - 1) {
+                buffer[length] = (char)key;
+                buffer[length + 1] = '\0';
+            }
+            key = GetCharPressed();
+        }
+
+        if (IsKeyPressed(KEY_BACKSPACE)) {
+            int length = strlen(buffer);
+            if (length > 0) buffer[length - 1] = '\0';
+        }
+    }
+}
+
 
 void LoadAttendance(const std::string& filename) {
     std::ifstream file(filename);
     if (file.is_open()) {
-        std::string id;
+        std::string date, id;
         bool present;
-        while (file >> id >> present) {
-            attendance[id] = present;
+        while (file >> date >> id >> present) {
+            attendance[date][id] = present;
         }
         file.close();
     }
@@ -88,12 +117,15 @@ void LoadAttendance(const std::string& filename) {
 void SaveAttendance(const std::string& filename) {
     std::ofstream file(filename);
     if (file.is_open()) {
-        for (const auto& entry : attendance) {
-            file << entry.first << " " << entry.second << "\n";
+        for (const auto& dateEntry : attendance) {
+            for (const auto& entry : dateEntry.second) {
+                file << dateEntry.first << " " << entry.first << " " << entry.second << "\n";
+            }
         }
         file.close();
     }
 }
+
 
 bool Checkbox(Rectangle rect, bool checked) {
     bool clicked = false;
@@ -193,29 +225,35 @@ int main() {
                 DrawText("Student Name:", 200, 200, 20, DARKGRAY);
                 TextInput(inputName, sizeof(inputName), {400, 200, 200, 40}, !idActive);
 
-                if (Button({300, 300, 200, 40}, "Save")) {
-                    if (strlen(inputId) > 0 && strlen(inputName) > 0) {
+                if (Button({300, 300, 200, 40}, "Save"))
+                {
+                    if (strlen(inputId) > 0 && strlen(inputName) > 0)
+                    {
                         students.emplace_back(inputId, inputName);
                         FileHandler::saveStudents("students.txt", students);
-                        attendance[inputId] = false;
-                        SaveAttendance("attendance.txt");
+                        // Initialization of attendance can be skipped or managed when dates are handled
                         memset(inputId, 0, sizeof(inputId));
                         memset(inputName, 0, sizeof(inputName));
                         currentScreen = MENU;
                     }
                 }
 
-                if (Button({300, 350, 200, 40}, "Back")) {
+                if (Button({300, 350, 200, 40}, "Back"))
+                {
                     memset(inputId, 0, sizeof(inputId));
                     memset(inputName, 0, sizeof(inputName));
                     currentScreen = MENU;
                 }
 
-                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                {
                     Vector2 mousePoint = GetMousePosition();
-                    if (CheckCollisionPointRec(mousePoint, {400, 150, 200, 40})) {
+                    if (CheckCollisionPointRec(mousePoint, {400, 150, 200, 40}))
+                    {
                         idActive = true;
-                    } else if (CheckCollisionPointRec(mousePoint, {400, 200, 200, 40})) {
+                    }
+                    else if (CheckCollisionPointRec(mousePoint, {400, 200, 200, 40}))
+                    {
                         idActive = false;
                     }
                 }
@@ -312,23 +350,71 @@ int main() {
                 break;
 
             case ATTENDANCE:
-                DrawText("Attendance", 350, 50, 20, DARKGRAY);
-                for (int i = 0; i < students.size(); i++) {
-                    DrawText((students[i].getId() + " - " + students[i].getName()).c_str(), 200, 100 + i * 30, 20, DARKGRAY);
-                    attendance[students[i].getId()] = Checkbox({ 500.0f, 100.0f + i * 30.0f, 20.0f, 20.0f }, attendance[students[i].getId()]);
+                DrawText("Take Attendance", 350, 50, 20, DARKGRAY);
+                DrawText("Date (YYYY-MM-DD):", 200, 100, 20, DARKGRAY);
+                DateInput(attendanceDate, sizeof(attendanceDate), {400, 100, 200, 40}, dateActive);
+
+                if (strlen(attendanceDate) == 10)
+                { // Ensure date is entered
+                    for (int i = 0; i < students.size(); i++)
+                    {
+                        DrawText((students[i].getId() + " - " + students[i].getName()).c_str(), 200, 150 + i * 30, 20, DARKGRAY);
+                        attendance[attendanceDate][students[i].getId()] = Checkbox({500.0f, 150.0f + i * 30.0f, 20.0f, 20.0f}, attendance[attendanceDate][students[i].getId()]);
+                    }
                 }
-                if (Button({300, 500, 200, 40}, "Save & Back")) {
+
+                if (Button({300, 500, 200, 40}, "Save & Back"))
+                {
                     SaveAttendance("attendance.txt");
+                    memset(attendanceDate, 0, sizeof(attendanceDate));
                     currentScreen = MENU;
+                }
+
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                {
+                    Vector2 mousePoint = GetMousePosition();
+                    if (CheckCollisionPointRec(mousePoint, {400, 100, 200, 40}))
+                    {
+                        dateActive = true;
+                    }
+                    else
+                    {
+                        dateActive = false;
+                    }
                 }
                 break;
 
             case DISPLAY_ATTENDANCE:
-                DrawText("Attendance List", 350, 50, 20, DARKGRAY);
-                for (int i = 0; i < students.size(); i++) {
-                    DrawText((students[i].getId() + " - " + students[i].getName() + " - " + (attendance[students[i].getId()] ? "Present" : "Absent")).c_str(), 200, 100 + i * 30, 20, DARKGRAY);
+                DrawText("Display Attendance", 350, 50, 20, DARKGRAY);
+                DrawText("Date (YYYY-MM-DD):", 200, 100, 20, DARKGRAY);
+                DateInput(attendanceDate, sizeof(attendanceDate), {400, 100, 200, 40}, dateActive);
+
+                if (strlen(attendanceDate) == 10)
+                { // Ensure date is entered
+                    for (int i = 0; i < students.size(); i++)
+                    {
+                        DrawText((students[i].getId() + " - " + students[i].getName() + " - " + (attendance[attendanceDate][students[i].getId()] ? "Present" : "Absent")).c_str(), 200, 150 + i * 30, 20, DARKGRAY);
+                    }
                 }
-                if (Button({300, 500, 200, 40}, "Back")) currentScreen = MENU;
+
+                if (Button({300, 500, 200, 40}, "Back"))
+                {
+                    memset(attendanceDate, 0, sizeof(attendanceDate));
+                    currentScreen = MENU;
+                }
+
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                {
+                    Vector2 mousePoint = GetMousePosition();
+                    if (CheckCollisionPointRec(mousePoint, {400, 100, 200, 40}))
+                    {
+                        dateActive = true;
+                    }
+                    else
+                    {
+                        dateActive = false;
+                    }
+                }
                 break;
         }
 
