@@ -159,8 +159,7 @@ bool Checkbox(Rectangle rect, bool checked) {
 
     DrawRectangleLinesEx(rect, 2, DARKGRAY);
     if (checked) {
-        DrawLine(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height, DARKGRAY);
-        DrawLine(rect.x + rect.width, rect.y, rect.x, rect.y + rect.height, DARKGRAY);
+        DrawText("P", rect.x + rect.width / 2 - MeasureText("P", 16) / 2, rect.y + rect.height / 2 - 8, 16, Fade(DARKGRAY, 0.8f));    
     }
     return checked;
 }
